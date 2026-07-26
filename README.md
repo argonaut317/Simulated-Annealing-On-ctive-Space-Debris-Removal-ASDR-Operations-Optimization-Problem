@@ -297,6 +297,244 @@ Possible extensions include:
 
 ---
 
+
+# Mathematical Formulation and Formula Explanation
+
+## 1. Transfer ΔV Model
+
+To avoid requiring a full orbital mechanics simulator, the project estimates the transfer cost between two debris objects using differences in altitude and orbital inclination.
+
+For debris objects *i* and *j*:
+
+\[
+\Delta V_{ij} = 0.4 \times |Altitude_i-Altitude_j|
+               +25\times |Inclination_i-Inclination_j|
+\]
+
+### Explanation
+
+- **Altitude Difference (km)** estimates the effort required to change orbital altitude.
+- **Inclination Difference (degrees)** estimates the plane-change maneuver, which is generally much more expensive than altitude changes.
+- The coefficients (0.4 and 25) are weighting factors used to create a realistic optimization problem. They are not derived from orbital mechanics and can be replaced with values computed from Hohmann or Lambert transfers in future work.
+
+---
+
+## 2. Mission Time Model
+
+Mission transfer time is estimated as
+
+\[
+Time_{ij}
+=
+\frac{|Altitude_i-Altitude_j|}{25}
++
+4\times|Inclination_i-Inclination_j|
+\]
+
+### Explanation
+
+The model assumes:
+
+- Every 25 km of orbital altitude difference contributes approximately one hour of transfer time.
+- Each degree of inclination change contributes an additional four hours.
+
+This simplified model captures the idea that more difficult orbital transfers generally require more time.
+
+---
+
+## 3. Operational Cost
+
+Mission operating cost is computed from the total mission duration.
+
+\[
+Operational\ Cost
+=
+Mission\ Time
+\times
+Cost_{per\ hour}
+\]
+
+where
+
+\[
+Cost_{per\ hour}=5000
+\]
+
+### Explanation
+
+The constant represents an assumed operating cost for spacecraft activities, including communication, monitoring and mission support.
+
+---
+
+## 4. Collision Risk Removed
+
+Each debris object is assigned a collision risk score.
+
+The total risk removed is
+
+\[
+Risk_{removed}
+=
+\sum_{i=1}^{n}
+Risk_i
+\]
+
+### Explanation
+
+Removing higher-risk debris produces greater mission benefit.
+
+---
+
+## 5. Fuel Constraint
+
+The spacecraft has a maximum fuel budget.
+
+\[
+\sum \Delta V
+\le
+Fuel_{limit}
+\]
+
+In the example,
+
+\[
+Fuel_{limit}=450
+\]
+
+If the solution exceeds this limit, it is considered infeasible.
+
+---
+
+## 6. Penalty Function
+
+Instead of rejecting infeasible solutions, the optimizer adds a large penalty.
+
+\[
+Penalty=
+\begin{cases}
+100000,&\Delta V>Fuel_{limit}\\
+0,&otherwise
+\end{cases}
+\]
+
+### Why penalties?
+
+Penalty functions allow Simulated Annealing to occasionally explore infeasible regions while strongly encouraging convergence toward feasible solutions.
+
+---
+
+## 7. Objective Function
+
+The optimization minimizes
+
+\[
+J
+=
+w_1(\Delta V)
++
+w_2(Time)
++
+w_3(Cost)
+-
+w_4(Risk)
++
+Penalty
+\]
+
+where
+
+- \(w_1=0.4\)
+- \(w_2=0.2\)
+- \(w_3=0.2\)
+- \(w_4=0.2\)
+
+### Why is Risk subtracted?
+
+The optimization minimizes the objective value.
+
+Fuel, mission time and operating cost should all be **small**, while the amount of collision risk removed should be **large**.
+
+Subtracting the risk term rewards solutions that remove high-risk debris.
+
+---
+
+## 8. Simulated Annealing Acceptance Criterion
+
+When a neighboring solution is generated, the change in objective value is
+
+\[
+\Delta = J_{new}-J_{current}
+\]
+
+### Case 1
+
+If
+
+\[
+\Delta<0
+\]
+
+the new solution is automatically accepted because it improves the objective.
+
+### Case 2
+
+If
+
+\[
+\Delta>0
+\]
+
+the solution may still be accepted with probability
+
+\[
+P=e^{-\Delta/T}
+\]
+
+where
+
+- \(T\) is the current temperature.
+
+### Why accept worse solutions?
+
+This allows the search to escape local optima early in the optimization.
+
+As the temperature decreases, the probability of accepting worse solutions also decreases.
+
+---
+
+## 9. Cooling Schedule
+
+The temperature decreases after every iteration.
+
+\[
+T_{new}
+=
+\alpha T_{old}
+\]
+
+where
+
+- Initial Temperature = 1000
+- Cooling Rate (\(\alpha\)) = 0.995
+- Minimum Temperature = 0.01
+
+The algorithm terminates when the temperature reaches the minimum threshold.
+
+---
+
+## Summary
+
+The project combines:
+
+- A simplified orbital transfer model
+- A weighted multi-objective optimization function
+- Constraint handling using penalty functions
+- Simulated Annealing with Metropolis acceptance
+- Geometric cooling schedule
+
+Although simplified, this formulation reflects the optimization workflow commonly used in Operations Research studies and can later be extended with real orbital mechanics libraries such as Orekit or Poliastro.
+
+
 # References
 
 1. Kirkpatrick, S., Gelatt, C. D., & Vecchi, M. P. (1983). *Optimization by Simulated Annealing*. Science.
