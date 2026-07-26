@@ -1,2 +1,225 @@
 # Simulated-Annealing-On-ctive-Space-Debris-Removal-ASDR-Operations-Optimization-Problem
-Simulated-Annealing
+
+
+# Active Space Debris Removal (ASDR) Optimization using Simulated Annealing
+
+## Overview
+
+This project presents a simplified **research-level implementation** of the **Active Space Debris Removal (ASDR)** optimization problem using the **Simulated Annealing (SA)** metaheuristic.
+
+The objective is to determine an efficient sequence for removing space debris while minimizing mission resources (fuel, time, and cost) and maximizing the reduction in collision risk.
+
+Although this implementation uses simplified orbital transfer models, it demonstrates the optimization framework commonly used in Operations Research before integrating high-fidelity astrodynamics tools such as Orekit or Poliastro.
+
+---
+
+# Why is this an NP-Hard Problem?
+
+The ASDR mission planning problem is considered an **NP-hard combinatorial optimization problem** because it combines several difficult optimization tasks:
+
+- Selecting which debris objects to remove.
+- Determining the optimal removal sequence.
+- Minimizing fuel consumption (ΔV).
+- Satisfying mission constraints such as fuel and mission duration.
+
+If there are **N debris objects**, the number of possible visit sequences is:
+
+N!
+
+For example:
+
+| Number of Debris | Possible Sequences |
+|-----------------:|-------------------:|
+| 5 | 120 |
+| 8 | 40,320 |
+| 10 | 3,628,800 |
+| 20 | 2.43 × 10¹⁸ |
+
+An exhaustive search quickly becomes computationally infeasible.
+
+The ASDR problem is closely related to several classical NP-hard problems:
+
+- Traveling Salesman Problem (optimal visit sequence)
+- Vehicle Routing Problem
+- Orienteering Problem
+- Knapsack Problem
+- Scheduling Problem
+
+Because ASDR generalizes these problems while adding orbital mechanics constraints, exact optimization methods become impractical for large instances. Metaheuristic algorithms such as Simulated Annealing, Genetic Algorithms, and Ant Colony Optimization are therefore widely used to obtain high-quality near-optimal solutions.
+
+---
+
+# Problem Formulation
+
+## Decision Variables
+
+The optimizer determines:
+
+- x₁ : Sequence of debris removal
+- x₂ : Next debris object to visit
+- x₃ : Orbital transfer between debris
+- x₄ : Total fuel (ΔV) allocation
+- x₅ : Mission schedule
+
+---
+
+## Objective Function
+
+The optimization minimizes the weighted objective:
+
+J = w₁(ΔV)
+  + w₂(Mission Time)
+  + w₃(Operational Cost)
+  - w₄(Collision Risk Removed)
+
+where:
+
+- ΔV = Total fuel consumption
+- Mission Time = Total transfer time
+- Operational Cost = Time × hourly mission cost
+- Collision Risk Removed = Sum of debris risk scores
+
+A large penalty is added whenever the fuel constraint is violated.
+
+---
+
+# Constraints
+
+The optimization is subject to:
+
+- Fuel capacity limit
+- Mission duration
+- One visit per debris object
+- Valid orbital transfers
+- Single spacecraft mission
+- No duplicate debris removal
+
+Penalty functions are used to discourage infeasible solutions.
+
+---
+
+# Example Dataset
+
+Each debris object contains:
+
+| Attribute | Description |
+|-----------|-------------|
+| ID | Debris identifier |
+| Altitude | Orbital altitude (km) |
+| Inclination | Orbital inclination (degrees) |
+| Mass | Estimated object mass (kg) |
+| Risk | Collision risk score |
+
+The program automatically computes simplified transfer ΔV and mission time matrices from orbital altitude and inclination differences.
+
+---
+
+# Algorithm
+
+The project implements **Simulated Annealing** using:
+
+1. Random initial mission sequence
+2. Neighbor generation (swap, reverse, insert)
+3. Objective function evaluation
+4. Acceptance using the Metropolis criterion
+5. Gradual cooling schedule
+6. Best solution tracking until convergence
+
+---
+
+# Project Structure
+
+```text
+.
+├── asdr_simulated_annealing.py
+├── README.md
+```
+
+---
+
+# Requirements
+
+- Python 3.10+
+- NumPy
+- Pandas
+- Matplotlib
+
+Install dependencies:
+
+```bash
+pip install numpy pandas matplotlib
+```
+
+---
+
+# Running the Project
+
+Execute:
+
+```bash
+python asdr_simulated_annealing.py
+```
+
+The program will:
+
+1. Load the example debris dataset.
+2. Build the transfer ΔV and mission time matrices.
+3. Run the Simulated Annealing optimizer.
+4. Print the optimized debris removal sequence.
+5. Display mission statistics.
+6. Plot the convergence history.
+
+---
+
+# Simulated Annealing Parameters
+
+| Parameter | Value |
+|-----------|------:|
+| Initial Temperature | 1000 |
+| Cooling Rate | 0.995 |
+| Minimum Temperature | 0.01 |
+
+---
+
+# Current Assumptions
+
+This implementation is intended for Operations Research coursework and makes several simplifying assumptions:
+
+- Estimated ΔV from altitude and inclination differences.
+- Simplified mission time model.
+- Single-spacecraft mission.
+- Single weighted objective function.
+- Static debris positions.
+- No atmospheric drag or orbital perturbations.
+
+---
+
+# Future Improvements
+
+Possible extensions include:
+
+- Real orbital elements (Keplerian or TLE)
+- Hohmann and Lambert transfer calculations
+- Integration with Orekit or Poliastro
+- Multi-spacecraft mission planning
+- Ant Colony Optimization (ACO)
+- NSGA-II multi-objective optimization
+- Particle Swarm Optimization (PSO)
+- Real ESA DISCOS or Space-Track debris catalog
+- Statistical comparison of multiple metaheuristics
+
+---
+
+# References
+
+1. Kirkpatrick, S., Gelatt, C. D., & Vecchi, M. P. (1983). *Optimization by Simulated Annealing*. Science.
+2. NASA Orbital Debris Program Office.
+3. ESA Space Debris Office.
+4. Talbi, E.-G. (2009). *Metaheuristics: From Design to Implementation*.
+
+---
+
+# License
+
+This project is intended for educational, academic, and research purposes.
+
