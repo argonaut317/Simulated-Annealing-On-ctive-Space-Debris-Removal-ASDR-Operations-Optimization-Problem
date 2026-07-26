@@ -194,6 +194,93 @@ This implementation is intended for Operations Research coursework and makes sev
 
 ---
 
+
+# Sample Program Output
+
+> **Note:** Simulated Annealing is a stochastic (randomized) optimization algorithm. Therefore, the exact output may vary each time the program is executed unless a fixed random seed is used.
+
+## Example Console Output
+
+```text
+====================================================
+Active Space Debris Removal Optimization
+Simulated Annealing
+====================================================
+
+Building transfer cost matrices...
+
+Running Simulated Annealing...
+
+Optimization Complete!
+
+Best Objective Score: 24396.87
+
+Optimized Removal Order
+
+D5 -> D2 -> D1 -> D6 -> D8 -> D7 -> D4 -> D3
+
+Mission Summary
+-----------------------------------
+Total ΔV         : 381.40 m/s
+Mission Time     : 52.80 hr
+Operational Cost : $264,000.00
+Risk Removed     : 6.64
+
+Fuel Constraint  : Satisfied
+```
+
+---
+
+## Expected Convergence Trend
+
+The objective function typically decreases rapidly during the early iterations before gradually converging toward a stable near-optimal solution.
+
+```text
+Objective
+25000 |\
+      | \
+24000 |  \
+      |    \_____
+23000 |          \_____
+      |                \____
+22000 |                     \_____
+      |
+      +------------------------------------>
+          Iterations
+```
+
+---
+
+## Example Dataset
+
+| Debris | Altitude (km) | Inclination (°) | Mass (kg) | Risk |
+|---------|--------------:|----------------:|----------:|-----:|
+| D1 | 700 | 98.2 | 1200 | 0.82 |
+| D2 | 720 | 97.8 | 900 | 0.65 |
+| D3 | 680 | 98.6 | 1400 | 0.91 |
+| D4 | 750 | 99.1 | 1600 | 0.93 |
+| D5 | 690 | 97.9 | 850 | 0.72 |
+| D6 | 710 | 98.4 | 1000 | 0.79 |
+| D7 | 740 | 99.4 | 1500 | 0.95 |
+| D8 | 730 | 98.7 | 1300 | 0.87 |
+
+---
+
+## Reproducible Results
+
+To obtain the same output every time, initialize the random number generators before running the algorithm:
+
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+```
+
+This ensures that the initial solution and the optimization process are deterministic, making the results reproducible for coursework, reports, and research documentation.
+
+
 # Future Improvements
 
 Possible extensions include:
