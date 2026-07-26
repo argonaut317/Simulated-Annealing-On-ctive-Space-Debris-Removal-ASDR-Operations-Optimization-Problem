@@ -298,136 +298,132 @@ Possible extensions include:
 ---
 
 
-# Mathematical Formulation and Formula Explanation
 
-## 1. Transfer ΔV Model
+# Mathematical Formulation
 
-To avoid requiring a full orbital mechanics simulator, the project estimates the transfer cost between two debris objects using differences in altitude and orbital inclination.
-
-For debris objects *i* and *j*:
-
-\[
-\Delta V_{ij} = 0.4 \times |Altitude_i-Altitude_j|
-               +25\times |Inclination_i-Inclination_j|
-\]
-
-### Explanation
-
-- **Altitude Difference (km)** estimates the effort required to change orbital altitude.
-- **Inclination Difference (degrees)** estimates the plane-change maneuver, which is generally much more expensive than altitude changes.
-- The coefficients (0.4 and 25) are weighting factors used to create a realistic optimization problem. They are not derived from orbital mechanics and can be replaced with values computed from Hohmann or Lambert transfers in future work.
+> **Note:** The equations below are written in GitHub-compatible Markdown using LaTeX. GitHub may display them as plain text unless MathJax is enabled (e.g., GitHub Pages, VS Code Markdown Preview, Jupyter, or Typora).
 
 ---
 
-## 2. Mission Time Model
+# 1. Transfer ΔV Model
+
+The estimated transfer cost between debris object \(i\) and debris object \(j\) is
+
+```math
+\Delta V_{ij}
+=
+0.4\left|Altitude_i-Altitude_j\right|
++
+25\left|Inclination_i-Inclination_j\right|
+```
+
+### Explanation
+
+- \(\Delta V_{ij}\) = estimated fuel required to transfer from debris \(i\) to debris \(j\)
+- \(|Altitude_i-Altitude_j|\) = orbital altitude difference (km)
+- \(|Inclination_i-Inclination_j|\) = orbital inclination difference (degrees)
+
+The coefficients (0.4 and 25) are simplified weighting factors. In a real mission, these values would be computed using orbital mechanics (e.g., Hohmann or Lambert transfers).
+
+---
+
+# 2. Mission Time Model
 
 Mission transfer time is estimated as
 
-\[
+```math
 Time_{ij}
 =
 \frac{|Altitude_i-Altitude_j|}{25}
 +
-4\times|Inclination_i-Inclination_j|
-\]
+4|Inclination_i-Inclination_j|
+```
 
 ### Explanation
 
-The model assumes:
-
-- Every 25 km of orbital altitude difference contributes approximately one hour of transfer time.
-- Each degree of inclination change contributes an additional four hours.
-
-This simplified model captures the idea that more difficult orbital transfers generally require more time.
+- Every 25 km of altitude change contributes approximately one hour.
+- Every degree of inclination change contributes four hours.
+- This provides a simple approximation of transfer duration.
 
 ---
 
-## 3. Operational Cost
+# 3. Operational Cost
 
-Mission operating cost is computed from the total mission duration.
+The mission operating cost is
 
-\[
+```math
 Operational\ Cost
 =
 Mission\ Time
 \times
-Cost_{per\ hour}
-\]
+Cost_{hour}
+```
 
 where
 
-\[
-Cost_{per\ hour}=5000
-\]
+```math
+Cost_{hour}=5000
+```
 
-### Explanation
-
-The constant represents an assumed operating cost for spacecraft activities, including communication, monitoring and mission support.
+This assumes a constant operating cost of \$5,000 per mission hour.
 
 ---
 
-## 4. Collision Risk Removed
+# 4. Collision Risk Removed
 
-Each debris object is assigned a collision risk score.
+The total collision risk removed is
 
-The total risk removed is
-
-\[
+```math
 Risk_{removed}
 =
-\sum_{i=1}^{n}
-Risk_i
-\]
+\sum_{i=1}^{n} Risk_i
+```
 
-### Explanation
+where \(Risk_i\) is the risk score of debris object \(i\).
 
-Removing higher-risk debris produces greater mission benefit.
+Higher values indicate that more hazardous debris has been removed.
 
 ---
 
-## 5. Fuel Constraint
+# 5. Fuel Constraint
 
-The spacecraft has a maximum fuel budget.
+The total mission ΔV must satisfy
 
-\[
-\sum \Delta V
-\le
-Fuel_{limit}
-\]
+```math
+\sum \Delta V \le Fuel_{limit}
+```
 
-In the example,
+For this project,
 
-\[
+```math
 Fuel_{limit}=450
-\]
+```
 
-If the solution exceeds this limit, it is considered infeasible.
+Any solution exceeding this limit is considered infeasible.
 
 ---
 
-## 6. Penalty Function
+# 6. Penalty Function
 
-Instead of rejecting infeasible solutions, the optimizer adds a large penalty.
+Constraint violations are handled using a penalty function.
 
-\[
+```math
 Penalty=
 \begin{cases}
-100000,&\Delta V>Fuel_{limit}\\
-0,&otherwise
+100000,& \text{if } \sum\Delta V > Fuel_{limit} \\
+0,& \text{otherwise}
 \end{cases}
-\]
+```
 
-### Why penalties?
-
-Penalty functions allow Simulated Annealing to occasionally explore infeasible regions while strongly encouraging convergence toward feasible solutions.
+The large penalty discourages infeasible solutions while still allowing Simulated Annealing to explore the search space.
 
 ---
 
-## 7. Objective Function
+# 7. Objective Function
 
 The optimization minimizes
 
-\[
+```math
 J
 =
 w_1(\Delta V)
@@ -436,89 +432,90 @@ w_2(Time)
 +
 w_3(Cost)
 -
-w_4(Risk)
+w_4(Risk_{removed})
 +
 Penalty
-\]
+```
 
 where
 
-- \(w_1=0.4\)
-- \(w_2=0.2\)
-- \(w_3=0.2\)
-- \(w_4=0.2\)
+- \(w_1 = 0.4\)
+- \(w_2 = 0.2\)
+- \(w_3 = 0.2\)
+- \(w_4 = 0.2\)
 
-### Why is Risk subtracted?
+### Interpretation
 
-The optimization minimizes the objective value.
-
-Fuel, mission time and operating cost should all be **small**, while the amount of collision risk removed should be **large**.
-
-Subtracting the risk term rewards solutions that remove high-risk debris.
+- Minimize fuel consumption.
+- Minimize mission duration.
+- Minimize operational cost.
+- Maximize collision risk removed (therefore the risk term is subtracted).
+- Penalize infeasible missions.
 
 ---
 
-## 8. Simulated Annealing Acceptance Criterion
+# 8. Simulated Annealing Acceptance Rule
 
-When a neighboring solution is generated, the change in objective value is
+The change in objective value is
 
-\[
-\Delta = J_{new}-J_{current}
-\]
-
-### Case 1
+```math
+\Delta = J_{new} - J_{current}
+```
 
 If
 
-\[
-\Delta<0
-\]
+```math
+\Delta < 0
+```
 
-the new solution is automatically accepted because it improves the objective.
+the new solution is accepted because it is better.
 
-### Case 2
+Otherwise, it is accepted with probability
 
-If
-
-\[
-\Delta>0
-\]
-
-the solution may still be accepted with probability
-
-\[
+```math
 P=e^{-\Delta/T}
-\]
+```
 
 where
 
-- \(T\) is the current temperature.
+- \(P\) = acceptance probability
+- \(T\) = current temperature
 
-### Why accept worse solutions?
-
-This allows the search to escape local optima early in the optimization.
-
-As the temperature decreases, the probability of accepting worse solutions also decreases.
+This mechanism helps the algorithm escape local optima during the early stages of the search.
 
 ---
 
-## 9. Cooling Schedule
+# 9. Cooling Schedule
 
-The temperature decreases after every iteration.
+The temperature is reduced after every iteration using geometric cooling.
 
-\[
+```math
 T_{new}
 =
 \alpha T_{old}
-\]
+```
 
 where
 
-- Initial Temperature = 1000
-- Cooling Rate (\(\alpha\)) = 0.995
-- Minimum Temperature = 0.01
+- Initial temperature = 1000
+- Cooling factor \(\alpha = 0.995\)
+- Minimum temperature = 0.01
 
-The algorithm terminates when the temperature reaches the minimum threshold.
+The algorithm terminates when the temperature falls below the minimum threshold.
+
+---
+
+# Overall Optimization Model
+
+The project combines:
+
+1. Simplified orbital transfer estimation.
+2. A weighted multi-objective optimization function.
+3. Constraint handling using penalty functions.
+4. Simulated Annealing with the Metropolis acceptance criterion.
+5. A geometric cooling schedule.
+
+This formulation is appropriate for an Operations Research demonstration and can later be extended by replacing the simplified transfer equations with physically accurate orbital mechanics models.
 
 ---
 
